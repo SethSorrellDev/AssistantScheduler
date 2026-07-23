@@ -13,8 +13,18 @@ depends_on = None
 
 
 def upgrade():
+    bind = op.get_bind()
+    is_pg = bind.dialect.name == 'postgresql'
+
     # --- Data migration: rename employee → ssr, add assistant ---
     op.execute("UPDATE roles SET name='ssr' WHERE name='employee'")
+
+    if is_pg:
+        # PostgreSQL sequences don't auto-update when rows are inserted with
+        # explicit IDs (as the earlier migration did). Reset it so the next
+        # INSERT without an explicit ID gets a valid new ID.
+        op.execute("SELECT setval('roles_id_seq', (SELECT MAX(id) FROM roles))")
+
     op.execute(
         "INSERT INTO roles (name) SELECT 'assistant' WHERE NOT EXISTS "
         "(SELECT 1 FROM roles WHERE name='assistant')"
@@ -54,16 +64,20 @@ def upgrade():
         batch_op.alter_column('status', nullable=False)
 
     # --- users: add new columns, clean up old ones ---
+    # Boolean server defaults: use dialect-appropriate literals
+    bool_true = sa.text('true') if is_pg else sa.text('1')
+    bool_false = sa.text('false') if is_pg else sa.text('0')
+
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.add_column(sa.Column('location_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('phone_number', sa.String(length=20), nullable=True))
         batch_op.add_column(sa.Column(
             'notify_email', sa.Boolean(), nullable=False,
-            server_default=sa.text('1')
+            server_default=bool_true
         ))
         batch_op.add_column(sa.Column(
             'notify_sms', sa.Boolean(), nullable=False,
-            server_default=sa.text('0')
+            server_default=bool_false
         ))
         batch_op.drop_index(batch_op.f('ix_users_email'))
         batch_op.create_unique_constraint('uq_users_email', ['email'])
@@ -103,6 +117,5 @@ def downgrade():
 
     op.drop_table('locations')
 
-    # --- Reverse role data migration ---
     op.execute("DELETE FROM roles WHERE name='assistant'")
     op.execute("UPDATE roles SET name='employee' WHERE name='ssr'")
