@@ -4,24 +4,27 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_wtf import CSRFProtect
-from flask_socketio import SocketIO  # NEW
+from flask_socketio import SocketIO
 
-# Extensions (module-level so blueprints can import them)
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 csrf = CSRFProtect()
-socketio = SocketIO()  # NEW
+socketio = SocketIO()
 
 
 def create_app():
     app = Flask(__name__)
 
-    # --- Config ---
+    # --- Secret key — MUST come from env in production ---
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-me")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-        "DATABASE_URL", "sqlite:///schedule.db"
-    )
+
+    # --- Database URL ---
+    # Render provides PostgreSQL as postgres:// but SQLAlchemy 2.x needs postgresql://
+    database_url = os.environ.get("DATABASE_URL", "sqlite:///schedule.db")
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # --- Init extensions ---
@@ -30,11 +33,9 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     csrf.init_app(app)
-    # async_mode="eventlet" matches the worker we installed.
-    # cors_allowed_origins is fine as "*" for local dev; lock it down in Phase 4.
-    socketio.init_app(app, async_mode="eventlet", cors_allowed_origins="*")  # NEW
+    socketio.init_app(app, async_mode="eventlet", cors_allowed_origins="*")
 
-    # --- Models must be imported so Migrate sees them ---
+    # --- Models ---
     from app import models  # noqa: F401
 
     # --- User loader ---
@@ -51,6 +52,9 @@ def create_app():
     app.register_blueprint(manager_bp)
     app.register_blueprint(employee_bp)
 
+    # --- SocketIO event handlers ---
+    from app import events  # noqa: F401
+
     # --- Context processor ---
     @app.context_processor
     def inject_unread():
@@ -60,10 +64,7 @@ def create_app():
             return {"unread_count": unread_count(current_user.id)}
         return {"unread_count": 0}
 
-    # --- Register SocketIO event handlers ---
-    from app import events  # noqa: F401  # NEW
-
-
+    # --- Root redirect ---
     @app.route("/")
     def index():
         from flask import redirect, url_for
