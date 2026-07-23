@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}My Schedule — AssistantScheduler{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">My Schedule</h1>
+    <p class="text-slate-500 mt-1">Hi {{ current_user.name }} — here are your upcoming shifts.</p>
+</div>
+{% if shifts %}
+<div class="space-y-4">
+    {% for shift in shifts %}
+    <div class="bg-white rounded-2xl shadow p-5 flex items-center justify-between">
+        <div class="flex items-center gap-5">
+            <div class="text-center bg-[#1e3a5f] text-white rounded-xl w-14 py-2 shrink-0">
+                <p class="text-xs uppercase font-semibold">{{ shift.date.strftime('%a') }}</p>
+                <p class="text-2xl font-bold leading-tight">{{ shift.date.day }}</p>
+                <p class="text-xs">{{ shift.date.strftime('%b') }}</p>
+            </div>
+            <div>
+                <p class="font-semibold text-slate-800">
+                    {{ shift.start_time.strftime('%I:%M %p') }} — {{ shift.end_time.strftime('%I:%M %p') }}
+                </p>
+                <p class="text-sm text-slate-500">{{ shift.route.name if shift.route else '—' }}</p>
+                {% if shift.route and shift.route.ppe_required %}
+                <p class="text-xs text-amber-700 mt-0.5">🦺 PPE: {{ shift.route.ppe_required }}</p>
+                {% endif %}
+                {% if shift.notes %}
+                <p class="text-xs text-slate-400 mt-0.5">{{ shift.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold shrink-0
+            {% if shift.status == 'scheduled' %}bg-green-100 text-green-800
+            {% elif shift.status == 'modified' %}bg-yellow-100 text-yellow-800
+            {% elif shift.status == 'cancelled' %}bg-red-100 text-red-800
+            {% else %}bg-slate-100 text-slate-600{% endif %}">
+            {{ shift.status }}
+        </span>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-2xl shadow p-10 text-center text-slate-400">
+    You have no upcoming shifts scheduled.
+</div>
+{% endif %}
+{% endblock %}

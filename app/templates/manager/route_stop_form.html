@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Assign Stop — {{ route.name }}{% endblock %}
+{% block content %}
+<div class="max-w-lg">
+    <a href="{{ url_for('manager.route_stops', route_id=route.id) }}"
+       class="text-sm text-slate-400 hover:text-slate-600 mb-4 inline-block">← Back to {{ route.name }}</a>
+    <h1 class="text-2xl font-bold text-slate-800 mb-6">Assign Stop to {{ route.name }}</h1>
+    <div class="bg-white rounded-2xl shadow p-6">
+        <form method="POST" class="space-y-4">
+            {{ form.hidden_tag() }}
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Stop</label>
+                {{ form.stop_id(class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600") }}
+                <p class="text-xs text-slate-400 mt-1">
+                    Don't see a stop?
+                    <a href="{{ url_for('manager.add_stop') }}" class="text-blue-600 hover:underline">Add it to the pool first.</a>
+                </p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Day</label>
+                    {{ form.day(class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600") }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Order in Day</label>
+                    {{ form.sequence(class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600") }}
+                    <p class="text-xs text-slate-400 mt-1">Lower = earlier in the day.</p>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Route-Specific Notes</label>
+                <p class="text-xs text-slate-400 mb-1">Instructions specific to this stop on this route.</p>
+                {{ form.notes(class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600", rows=3) }}
+            </div>
+            <div class="flex gap-3 pt-2">
+                {{ form.submit(class="bg-[#1e3a5f] hover:bg-[#2a5298] text-white text-sm font-semibold px-5 py-2 rounded-lg transition cursor-pointer") }}
+                <a href="{{ url_for('manager.route_stops', route_id=route.id) }}"
+                   class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold px-5 py-2 rounded-lg transition">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

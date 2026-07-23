@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Notifications — AssistantScheduler{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">Notifications</h1>
+    {% if unread > 0 %}
+    <form method="POST" action="{{ url_for('employee.mark_all_read') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                class="text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg transition">
+            Mark all read
+        </button>
+    </form>
+    {% endif %}
+</div>
+<div class="bg-white rounded-2xl shadow divide-y divide-slate-100">
+    {% for note in notes %}
+    <div class="flex items-start justify-between px-6 py-4 {% if not note.is_read %}bg-blue-50{% endif %}">
+        <div>
+            <p class="text-sm {% if not note.is_read %}font-semibold text-slate-800{% else %}text-slate-600{% endif %}">
+                {{ note.message }}
+            </p>
+            <p class="text-xs text-slate-400 mt-0.5">{{ note.created_at.strftime('%b %d, %I:%M %p') }}</p>
+        </div>
+        {% if not note.is_read %}
+        <form method="POST" action="{{ url_for('employee.mark_read', note_id=note.id) }}" class="ml-4 shrink-0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="text-xs text-blue-600 hover:underline font-medium">mark read</button>
+        </form>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="px-6 py-10 text-center text-slate-400 text-sm">No notifications yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

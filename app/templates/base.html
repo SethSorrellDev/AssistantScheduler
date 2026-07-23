@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AssistantScheduler{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Prevent flash of unstyled content while Tailwind loads */
+        body { background-color: #f8fafc; font-family: ui-sans-serif, system-ui, sans-serif; }
+        nav { background-color: #1e3a5f; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <nav class="bg-[#1e3a5f] text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="{{ url_for('auth.login') }}"
+                   class="text-xl font-bold tracking-tight text-white hover:text-slate-200">
+                    AssistantScheduler
+                </a>
+                <div class="flex items-center gap-6 text-sm font-medium">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_manager %}
+                            <a href="{{ url_for('manager.dashboard') }}" class="hover:text-slate-200">Dashboard</a>
+                            <a href="{{ url_for('manager.shifts') }}" class="hover:text-slate-200">Shifts</a>
+                            <a href="{{ url_for('manager.employees') }}" class="hover:text-slate-200">Employees</a>
+                            <a href="{{ url_for('manager.routes') }}" class="hover:text-slate-200">Routes</a>
+                            <a href="{{ url_for('manager.stops') }}" class="hover:text-slate-200">Stops</a>
+                            <a href="{{ url_for('manager.audit_log') }}" class="hover:text-slate-200">Audit Log</a>
+                        {% else %}
+                            <a href="{{ url_for('employee.dashboard') }}" class="hover:text-slate-200">My Schedule</a>
+                            <a href="{{ url_for('employee.notifications') }}"
+                               class="relative hover:text-slate-200" id="nav-bell">
+                                🔔
+                                <span id="bell-badge"
+                                      class="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 leading-none"
+                                      {% if not unread_count or unread_count == 0 %}style="display:none;"{% endif %}>
+                                    {{ unread_count or 0 }}
+                                </span>
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('auth.logout') }}" class="hover:text-slate-200">Logout</a>
+                        <span class="text-slate-300 border-l border-slate-600 pl-6">{{ current_user.name }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 mt-4 space-y-2">
+            {% for category, message in messages %}
+            <div class="px-4 py-3 rounded-lg text-sm font-medium
+                {% if category == 'success' %}bg-green-100 text-green-800
+                {% elif category == 'danger' %}bg-red-100 text-red-800
+                {% elif category == 'warning' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Tailwind at bottom prevents render-blocking flash -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cintas: { DEFAULT: '#1e3a5f', light: '#2a5298' }
+                    }
+                }
+            }
+        }
+    </script>
+    {% if current_user.is_authenticated %}
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/realtime.js') }}"></script>
+    {% endif %}
+</body>
+</html>

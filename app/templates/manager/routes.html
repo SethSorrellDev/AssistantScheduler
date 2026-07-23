@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Routes — AssistantScheduler{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">Service Routes</h1>
+    <a href="{{ url_for('manager.add_route') }}"
+       class="bg-[#1e3a5f] hover:bg-[#2a5298] text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+        + Add Route
+    </a>
+</div>
+{% if routes %}
+<div class="bg-white rounded-2xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600 uppercase text-xs tracking-wider">
+            <tr>
+                <th class="px-6 py-3 text-left">Name</th>
+                <th class="px-6 py-3 text-left">Description</th>
+                <th class="px-6 py-3 text-left">PPE Required</th>
+                <th class="px-6 py-3 text-left">Stops</th>
+                <th class="px-6 py-3 text-left">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+            {% for route in routes %}
+            <tr class="hover:bg-slate-50">
+                <td class="px-6 py-4 font-medium text-slate-800">{{ route.name }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ route.description or '—' }}</td>
+                <td class="px-6 py-4">
+                    {% if route.ppe_required %}
+                    <span class="inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+                        {{ route.ppe_required }}
+                    </span>
+                    {% else %}
+                    <span class="text-slate-400 text-xs">None</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    <span class="text-slate-600 text-xs font-medium">
+                        {{ route.route_stops|length }} assigned
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="flex gap-2">
+                        <a href="{{ url_for('manager.route_stops', route_id=route.id) }}"
+                           class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-md font-medium transition">
+                            Stops
+                        </a>
+                        <a href="{{ url_for('manager.edit_route', route_id=route.id) }}"
+                           class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-md font-medium transition">
+                            Edit
+                        </a>
+                        <form method="POST" action="{{ url_for('manager.delete_route', route_id=route.id) }}"
+                              onsubmit="return confirm('Delete {{ route.name }}?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                    class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-md font-medium transition">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-slate-500">No routes yet.</p>
+{% endif %}
+{% endblock %}
