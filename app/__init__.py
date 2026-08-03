@@ -17,7 +17,15 @@ def create_app():
     app = Flask(__name__)
 
     # --- Secret key — MUST come from env in production ---
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-me")
+    secret_key = os.environ.get("SECRET_KEY")
+    if not secret_key:
+        if os.environ.get("FLASK_ENV") == "production":
+            raise RuntimeError(
+                "SECRET_KEY environment variable must be set in production. "
+                "Refusing to start with an insecure default."
+            )
+        secret_key = "dev-key-change-me"  # local development only
+    app.config["SECRET_KEY"] = secret_key
 
     # --- Database URL ---
     # Render provides PostgreSQL as postgres:// but SQLAlchemy 2.x needs postgresql://
@@ -33,7 +41,10 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     csrf.init_app(app)
-    socketio.init_app(app, async_mode="eventlet", cors_allowed_origins="*")
+    allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*")
+    if allowed_origins != "*":
+        allowed_origins = [o.strip() for o in allowed_origins.split(",")]
+    socketio.init_app(app, async_mode="eventlet", cors_allowed_origins=allowed_origins)
 
     # --- Models ---
     from app import models  # noqa: F401
