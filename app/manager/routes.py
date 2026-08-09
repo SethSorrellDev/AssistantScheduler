@@ -207,6 +207,24 @@ def shifts():
         })
     return render_template('manager/shifts.html', weeks=weeks)
 
+def _has_shift_conflict(user_id, shift_date, start_time, end_time, exclude_shift_id=None):
+    """Return the first overlapping shift for this employee on this date, or None.
+
+    Two shifts overlap if one starts before the other ends and vice versa.
+    Cancelled shifts don't block new ones.
+    """
+    query = Shift.query.filter(
+        Shift.user_id == user_id,
+        Shift.date == shift_date,
+        Shift.status != 'cancelled',
+        Shift.start_time < end_time,
+        Shift.end_time > start_time,
+    )
+    if exclude_shift_id is not None:
+        query = query.filter(Shift.id != exclude_shift_id)
+    return query.first()
+
+
 @manager.route('/shifts/add', methods=['GET', 'POST'])
 @role_required('manager')
 def add_shift():
@@ -215,6 +233,20 @@ def add_shift():
     if form.validate_on_submit():
         if form.end_time.data <= form.start_time.data:
             flash('End time must be after start time.', 'danger')
+            return render_template('manager/shift_form.html',
+                                   form=form, action='Add')
+        conflict = _has_shift_conflict(
+            form.user_id.data, form.date.data,
+            form.start_time.data, form.end_time.data,
+        )
+        if conflict:
+            flash(
+                f'{conflict.employee.name} already has a shift on '
+                f'{form.date.data.strftime("%b %d")} from '
+                f'{conflict.start_time.strftime("%I:%M %p")} to '
+                f'{conflict.end_time.strftime("%I:%M %p")}. Choose a different time.',
+                'danger'
+            )
             return render_template('manager/shift_form.html',
                                    form=form, action='Add')
         shift = Shift(
@@ -254,6 +286,21 @@ def edit_shift(shift_id):
     if form.validate_on_submit():
         if form.end_time.data <= form.start_time.data:
             flash('End time must be after start time.', 'danger')
+            return render_template('manager/shift_form.html',
+                                   form=form, action='Edit')
+        conflict = _has_shift_conflict(
+            form.user_id.data, form.date.data,
+            form.start_time.data, form.end_time.data,
+            exclude_shift_id=shift.id,
+        )
+        if conflict:
+            flash(
+                f'{conflict.employee.name} already has a shift on '
+                f'{form.date.data.strftime("%b %d")} from '
+                f'{conflict.start_time.strftime("%I:%M %p")} to '
+                f'{conflict.end_time.strftime("%I:%M %p")}. Choose a different time.',
+                'danger'
+            )
             return render_template('manager/shift_form.html',
                                    form=form, action='Edit')
         shift.user_id = form.user_id.data

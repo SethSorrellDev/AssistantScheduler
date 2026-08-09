@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from flask_login import UserMixin
 from app import db
 import bcrypt
@@ -115,9 +115,9 @@ class Shift(db.Model):
     end_time = db.Column(db.Time, nullable=False)
     notes = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), nullable=False, default="scheduled")
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
-                           onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc),
+                           onupdate=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
         return f"<Shift {self.id} on {self.date}>"
@@ -132,7 +132,7 @@ class Notification(db.Model):
     message = db.Column(db.String(255), nullable=False)
     link = db.Column(db.String(255), nullable=True)
     is_read = db.Column(db.Boolean, nullable=False, default=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship("User",
                            backref=db.backref("notifications",
@@ -158,7 +158,7 @@ class AuditLog(db.Model):
     entity = db.Column(db.String(50), nullable=False)
     entity_id = db.Column(db.Integer, nullable=True)
     detail = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     actor = db.relationship("User", foreign_keys=[actor_id],
                             backref=db.backref("audit_actions",
@@ -173,7 +173,7 @@ class Stop(db.Model):
     name = db.Column(db.String(150), nullable=False)
     address = db.Column(db.String(255), nullable=True)
     notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
         return f"<Stop {self.name}>"
