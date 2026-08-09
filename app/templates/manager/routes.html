@@ -27,9 +27,13 @@
                 <td class="px-6 py-4 text-slate-600">{{ route.description or '—' }}</td>
                 <td class="px-6 py-4">
                     {% if route.ppe_required %}
-                    <span class="inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">
-                        {{ route.ppe_required }}
-                    </span>
+                    <div class="flex flex-wrap gap-1 max-w-xs">
+                        {% for item in route.ppe_required.split(',') %}
+                        <span class="inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+                            {{ item.strip() | ppe_icon }} {{ item.strip() }}
+                        </span>
+                        {% endfor %}
+                    </div>
                     {% else %}
                     <span class="text-slate-400 text-xs">None</span>
                     {% endif %}

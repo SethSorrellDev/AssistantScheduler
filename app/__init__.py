@@ -81,4 +81,10 @@ def create_app():
         from flask import redirect, url_for
         return redirect(url_for("auth.login"))
 
+    from app.manager.forms import PPE_ICONS
+
+    @app.template_filter("ppe_icon")
+    def ppe_icon(item_name):
+        return PPE_ICONS.get(item_name.strip(), "🦺")
+
     return app

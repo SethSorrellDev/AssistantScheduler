@@ -36,9 +36,13 @@
                         {{ route.route_stops|length }} stop{{ 's' if route.route_stops|length != 1 else '' }}
                     </span>
                     {% if route.ppe_required %}
-                    <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">
-                        🦺 {{ route.ppe_required }}
-                    </span>
+                    <div class="flex flex-wrap gap-1">
+                        {% for item in route.ppe_required.split(',') %}
+                        <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+                            {{ item.strip() | ppe_icon }} {{ item.strip() }}
+                        </span>
+                        {% endfor %}
+                    </div>
                     {% endif %}
                 </div>
                 <div class="flex items-center gap-3">

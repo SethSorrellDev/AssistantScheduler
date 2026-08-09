@@ -1,13 +1,42 @@
 from flask_wtf import FlaskForm
 from wtforms import (StringField, PasswordField, SelectField, TextAreaField,
-                     DateField, TimeField, SubmitField, IntegerField)
+                     DateField, TimeField, SubmitField, IntegerField,
+                     SelectMultipleField)
+from wtforms.widgets import ListWidget, CheckboxInput
 from wtforms.validators import DataRequired, Email, Length, Optional, NumberRange
+
+
+PPE_OPTIONS = [
+    "Safety glasses",
+    "Hearing protection",
+    "Gloves",
+    "Hard hat",
+    "Hi-vis vest",
+    "Long sleeves",
+    "Hairnets",
+    "Beard nets",
+    "Smocks",
+]
+
+PPE_ICONS = {
+    "Safety glasses": "🥽",
+    "Hearing protection": "🎧",
+    "Gloves": "🧤",
+    "Hard hat": "⛑️",
+    "Hi-vis vest": "🦺",
+    "Long sleeves": "👕",
+    "Hairnets": "🧢",
+    "Beard nets": "🧔",
+    "Smocks": "🥼",
+}
 
 
 class EmployeeForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
     email = StringField('Email', validators=[
-        DataRequired(), Email(), Length(max=150)
+        DataRequired(),
+        Email(),
+        Length(max=150)
     ])
     password = PasswordField('Password', validators=[Optional(), Length(min=6, max=150)])
     role = SelectField('Role', coerce=int, validators=[DataRequired()])
@@ -17,10 +46,12 @@ class EmployeeForm(FlaskForm):
 class RouteForm(FlaskForm):
     name = StringField('Route Name', validators=[DataRequired(), Length(max=100)])
     description = TextAreaField('Description', validators=[Optional()])
-    ppe_required = TextAreaField(
+    ppe_required = SelectMultipleField(
         'PPE Required',
+        choices=[(item, item) for item in PPE_OPTIONS],
+        widget=ListWidget(prefix_label=False),
+        option_widget=CheckboxInput(),
         validators=[Optional()],
-        render_kw={"placeholder": "e.g. Safety vest, steel-toed boots — leave blank if none required"}
     )
     submit = SubmitField('Save')
 

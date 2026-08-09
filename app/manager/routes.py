@@ -143,7 +143,7 @@ def add_route():
         route = Route(
             name=form.name.data,
             description=form.description.data,
-            ppe_required=form.ppe_required.data or None,
+            ppe_required=', '.join(form.ppe_required.data) if form.ppe_required.data else None,
         )
         db.session.add(route)
         db.session.commit()
@@ -156,10 +156,12 @@ def add_route():
 def edit_route(route_id):
     route = db.get_or_404(Route, route_id)
     form = RouteForm(obj=route)
+    if request.method == 'GET' and route.ppe_required:
+        form.ppe_required.data = [item.strip() for item in route.ppe_required.split(',')]
     if form.validate_on_submit():
         route.name = form.name.data
         route.description = form.description.data
-        route.ppe_required = form.ppe_required.data or None
+        route.ppe_required = ', '.join(form.ppe_required.data) if form.ppe_required.data else None
         db.session.commit()
         flash(f'Route "{route.name}" updated.', 'success')
         return redirect(url_for('manager.routes'))

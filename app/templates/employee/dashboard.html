@@ -21,7 +21,13 @@
                 </p>
                 <p class="text-sm text-slate-500">{{ shift.route.name if shift.route else '—' }}</p>
                 {% if shift.route and shift.route.ppe_required %}
-                <p class="text-xs text-amber-700 mt-0.5">🦺 PPE: {{ shift.route.ppe_required }}</p>
+                <div class="flex flex-wrap gap-1 mt-0.5">
+                    {% for item in shift.route.ppe_required.split(',') %}
+                    <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+                        {{ item.strip() | ppe_icon }} {{ item.strip() }}
+                    </span>
+                    {% endfor %}
+                </div>
                 {% endif %}
                 {% if shift.notes %}
                 <p class="text-xs text-slate-400 mt-0.5">{{ shift.notes }}</p>
