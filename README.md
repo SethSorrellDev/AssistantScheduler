@@ -1,4 +1,5 @@
 # AssistantScheduler
+![Tests](https://github.com/SethSorrellDev/AssistantScheduler/actions/workflows/tests.yml/badge.svg)
 
 A shift scheduling and workforce management web app built with Flask, featuring role-based dashboards, live in-app notifications, and full audit logging.
 
