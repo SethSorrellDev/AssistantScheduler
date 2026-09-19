@@ -18,3 +18,4 @@ instance/
 
 # VS Code
 .vscode/
+*.dump
