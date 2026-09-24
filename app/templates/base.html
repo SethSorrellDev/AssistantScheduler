@@ -20,7 +20,9 @@
                    class="text-xl font-bold tracking-tight text-white hover:text-slate-200">
                     AssistantScheduler
                 </a>
-                <div class="flex items-center gap-6 text-sm font-medium">
+
+                <!-- Desktop nav links -->
+                <div class="hidden md:flex items-center gap-6 text-sm font-medium">
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_manager %}
                             <a href="{{ url_for('manager.dashboard') }}" class="hover:text-slate-200">Dashboard</a>
@@ -45,8 +47,49 @@
                         <span class="text-slate-300 border-l border-slate-600 pl-6">{{ current_user.name }}</span>
                     {% endif %}
                 </div>
+
+                <!-- Mobile hamburger toggle -->
+                {% if current_user.is_authenticated %}
+                <button id="nav-toggle" type="button"
+                        class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-white/10 focus:outline-none"
+                        aria-controls="mobile-menu" aria-expanded="false">
+                    <span class="sr-only">Open main menu</span>
+                    <svg id="nav-icon-open" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <svg id="nav-icon-close" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                {% endif %}
             </div>
         </div>
+
+        <!-- Mobile menu panel -->
+        {% if current_user.is_authenticated %}
+        <div id="mobile-menu" class="hidden md:hidden border-t border-white/10">
+            <div class="px-4 pt-2 pb-4 space-y-1 text-sm font-medium">
+                {% if current_user.is_manager %}
+                    <a href="{{ url_for('manager.dashboard') }}" class="block py-2 hover:text-slate-200">Dashboard</a>
+                    <a href="{{ url_for('manager.shifts') }}" class="block py-2 hover:text-slate-200">Shifts</a>
+                    <a href="{{ url_for('manager.employees') }}" class="block py-2 hover:text-slate-200">Employees</a>
+                    <a href="{{ url_for('manager.routes') }}" class="block py-2 hover:text-slate-200">Routes</a>
+                    <a href="{{ url_for('manager.stops') }}" class="block py-2 hover:text-slate-200">Stops</a>
+                    <a href="{{ url_for('manager.audit_log') }}" class="block py-2 hover:text-slate-200">Audit Log</a>
+                {% else %}
+                    <a href="{{ url_for('employee.dashboard') }}" class="block py-2 hover:text-slate-200">My Schedule</a>
+                    <a href="{{ url_for('employee.notifications') }}" class="block py-2 hover:text-slate-200">
+                        Notifications
+                        {% if unread_count and unread_count > 0 %}
+                            <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5">{{ unread_count }}</span>
+                        {% endif %}
+                    </a>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}" class="block py-2 hover:text-slate-200">Logout</a>
+                <div class="pt-2 mt-2 border-t border-white/10 text-slate-300">{{ current_user.name }}</div>
+            </div>
+        </div>
+        {% endif %}
     </nav>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -81,6 +124,23 @@
                 }
             }
         }
+    </script>
+    <script>
+        (function () {
+            var toggle = document.getElementById('nav-toggle');
+            var menu = document.getElementById('mobile-menu');
+            var iconOpen = document.getElementById('nav-icon-open');
+            var iconClose = document.getElementById('nav-icon-close');
+            if (toggle && menu) {
+                toggle.addEventListener('click', function () {
+                    var isHidden = menu.classList.contains('hidden');
+                    menu.classList.toggle('hidden');
+                    iconOpen.classList.toggle('hidden');
+                    iconClose.classList.toggle('hidden');
+                    toggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                });
+            }
+        })();
     </script>
     {% if current_user.is_authenticated %}
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
