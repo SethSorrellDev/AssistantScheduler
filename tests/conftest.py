@@ -32,6 +32,20 @@ def app():
     os.unlink(db_path)
 
 
+@pytest.fixture(autouse=True)
+def fake_identity(monkeypatch):
+    """Stand in for identity-service: password123 signs in, anything else is rejected."""
+    from app.auth import identity
+
+    def authenticate(email, password):
+        if password != "password123":
+            raise identity.InvalidCredentials("Invalid email or password.")
+        return identity.Identity(sub=f"test-sub-{email.lower()}", email=email.lower())
+
+    monkeypatch.setattr(identity, "authenticate", authenticate)
+    monkeypatch.setattr(identity, "register", lambda *args, **kwargs: None)
+
+
 @pytest.fixture
 def client(app):
     return app.test_client()

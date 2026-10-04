@@ -32,7 +32,10 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
+    # Legacy bcrypt hash. Cleared once the user's identity-service account is linked.
+    password_hash = db.Column(db.String(255), nullable=True)
+    # identity-service subject; set on the first successful sign-in by email.
+    identity_sub = db.Column(db.String(36), unique=True, nullable=True, index=True)
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=True)
     location_id = db.Column(db.Integer, db.ForeignKey("locations.id"), nullable=True)
 
@@ -50,6 +53,8 @@ class User(UserMixin, db.Model):
         ).decode("utf-8")
 
     def check_password(self, password):
+        if not self.password_hash:
+            return False
         return bcrypt.checkpw(
             password.encode("utf-8"), self.password_hash.encode("utf-8")
         )

@@ -38,7 +38,6 @@ class EmployeeForm(FlaskForm):
         Email(),
         Length(max=150)
     ])
-    password = PasswordField('Password', validators=[Optional(), Length(min=6, max=150)])
     role = SelectField('Role', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Save')
 
