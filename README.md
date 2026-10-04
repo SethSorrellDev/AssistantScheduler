@@ -18,7 +18,7 @@ AssistantScheduler helps managers build and maintain employee shift schedules wh
 - **Real-time notifications** — powered by Flask-SocketIO with per-user rooms, so updates appear live without polling or refreshing
 - **Audit logging** — every create/update/delete action is recorded with the acting user and timestamp, visible to managers
 - **Employee & route management** — manager tools for maintaining employee records and delivery routes/stops
-- **Shared sign-in** — credentials are verified by a separate identity service (RS256 JWTs checked against its public JWKS); this app never stores passwords
+- **Shared sign-in** — credentials are verified by a separate identity service (RS256 JWTs checked against its public JWKS); new accounts have no local password, and any legacy bcrypt hash is erased the first time an account links to its identity
 - **Secure sessions** — HttpOnly, Secure, and SameSite-flagged session cookies
 
 ## Tech Stack
