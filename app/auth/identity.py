@@ -1,5 +1,6 @@
 """Client for the shared identity-service: sign-in, sign-up, and token verification."""
 import os
+import time
 from dataclasses import dataclass
 
 import jwt
@@ -7,7 +8,11 @@ import requests
 from jwt import PyJWKClient
 
 # identity-service runs on a free tier that sleeps; the first call can take a minute or more.
-TIMEOUT_SECONDS = 90
+TIMEOUT_SECONDS = 20
+ATTEMPTS = 3
+RETRY_DELAY_SECONDS = 4
+TRANSIENT_STATUSES = (502, 503, 504)
+WAKING_MESSAGE = "The sign-in service is waking up. Please try again in a minute."
 
 
 class IdentityError(Exception):
@@ -54,12 +59,18 @@ def verify_access_token(token):
 
 
 def _post(path, payload):
-    try:
-        return requests.post(f"{_base_url()}{path}", json=payload, timeout=TIMEOUT_SECONDS)
-    except requests.RequestException as exc:
-        raise IdentityError(
-            "Could not reach the sign-in service. It may be waking up, so try again in a minute."
-        ) from exc
+    """POST with a couple of retries for cold starts (connection errors, 502/503/504)."""
+    for attempt in range(1, ATTEMPTS + 1):
+        try:
+            response = requests.post(f"{_base_url()}{path}", json=payload, timeout=TIMEOUT_SECONDS)
+            if response.status_code not in TRANSIENT_STATUSES:
+                return response
+            print(f"identity {path}: HTTP {response.status_code} (attempt {attempt}/{ATTEMPTS})", flush=True)
+        except requests.RequestException as exc:
+            print(f"identity {path}: {type(exc).__name__} (attempt {attempt}/{ATTEMPTS})", flush=True)
+        if attempt < ATTEMPTS:
+            time.sleep(RETRY_DELAY_SECONDS)
+    raise IdentityError(WAKING_MESSAGE)
 
 
 def authenticate(email, password):
