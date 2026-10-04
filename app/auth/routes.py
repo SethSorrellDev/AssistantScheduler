@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from app import db
 from app.auth import auth
 from app.auth import identity
-from app.auth.forms import LoginForm, ProfileForm, ChangePasswordForm, RegisterForm
+from app.auth.forms import LoginForm, ProfileForm, RegisterForm
 from app.models import User
 
 
@@ -109,31 +109,12 @@ def logout():
 def profile():
     form = ProfileForm(obj=current_user)
     if form.validate_on_submit():
-        existing = User.query.filter_by(email=form.email.data.lower()).first()
-        if existing and existing.id != current_user.id:
-            flash('That email is already in use.', 'danger')
-        else:
-            current_user.name = form.name.data
-            current_user.email = form.email.data.lower()
-            db.session.commit()
-            flash('Profile updated.', 'success')
-            return redirect(url_for('auth.profile'))
+        # Email is the link to the shared sign-in, so it is never edited here.
+        current_user.name = form.name.data
+        db.session.commit()
+        flash('Profile updated.', 'success')
+        return redirect(url_for('auth.profile'))
     return render_template('auth/profile.html', form=form)
-
-
-@auth.route('/change-password', methods=['GET', 'POST'])
-@login_required
-def change_password():
-    form = ChangePasswordForm()
-    if form.validate_on_submit():
-        if not current_user.check_password(form.current_password.data):
-            flash('Current password is incorrect.', 'danger')
-        else:
-            current_user.set_password(form.new_password.data)
-            db.session.commit()
-            flash('Password updated.', 'success')
-            return redirect(url_for('auth.profile'))
-    return render_template('auth/change_password.html', form=form)
 
 
 from flask import redirect, url_for as _url_for

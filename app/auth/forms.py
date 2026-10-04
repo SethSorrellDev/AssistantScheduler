@@ -15,20 +15,7 @@ class LoginForm(FlaskForm):
 
 class ProfileForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
-    email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Save')
-
-
-class ChangePasswordForm(FlaskForm):
-    current_password = PasswordField('Current password',
-                                     validators=[DataRequired()])
-    new_password = PasswordField('New password',
-                                 validators=[DataRequired(), Length(min=8)])
-    confirm = PasswordField('Confirm new password',
-                            validators=[DataRequired(),
-                                        EqualTo('new_password',
-                                                message='Passwords must match')])
-    submit = SubmitField('Update password')
 
 
 class RegisterForm(FlaskForm):
