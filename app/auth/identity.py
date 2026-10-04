@@ -67,6 +67,7 @@ def authenticate(email, password):
     if response.status_code in (400, 401):
         raise InvalidCredentials("Invalid email or password.")
     if not response.ok:
+        print(f"identity login failed: HTTP {response.status_code} from {_base_url()}/auth/login", flush=True)
         raise IdentityError("Sign-in failed. Please try again.")
     return verify_access_token(response.json()["accessToken"])
 
