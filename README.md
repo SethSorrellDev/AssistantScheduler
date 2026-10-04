@@ -47,6 +47,15 @@ Sign-in is delegated to a shared identity service that also backs my other portf
 - **Access is by invitation.** A manager adds an employee's email under Employees; that person then signs in with their identity-service account.
 - **First sign-in after idle can be slow.** The identity service runs on a free Render instance that sleeps when unused. The app retries for several seconds; if it still shows "The sign-in service is waking up," wait about a minute and try again.
 
+### Local development
+
+Sign-in needs a running identity-service. By default the app looks for it at `http://localhost:8081`; point it elsewhere with the `IDENTITY_URL` environment variable (for example the deployed service's URL).
+
+```bash
+export IDENTITY_URL=https://your-identity-service.onrender.com
+flask run
+```
+
 ## Demo Data
 
 `seed_demo.py` fills an empty database with a fictional roster, routes, stops and two weeks of upcoming shifts, so the manager dashboard has something to show.
