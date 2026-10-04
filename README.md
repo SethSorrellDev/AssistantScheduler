@@ -4,7 +4,6 @@
 A shift scheduling and workforce management web app built with Flask, featuring role-based dashboards, live in-app notifications, and full audit logging.
 
 ![Demo](demo.gif)
-<!-- Replace demo.gif above with your actual GIF once it's recorded -->
 
 ## Overview
 
@@ -19,7 +18,8 @@ AssistantScheduler helps managers build and maintain employee shift schedules wh
 - **Real-time notifications** — powered by Flask-SocketIO with per-user rooms, so updates appear live without polling or refreshing
 - **Audit logging** — every create/update/delete action is recorded with the acting user and timestamp, visible to managers
 - **Employee & route management** — manager tools for maintaining employee records and delivery routes/stops
-- **Secure sessions** — HttpOnly, Secure, and SameSite-flagged session cookies; bcrypt password hashing
+- **Shared sign-in** — credentials are verified by a separate identity service (RS256 JWTs checked against its public JWKS); new accounts have no local password, and any legacy bcrypt hash is erased the first time an account links to its identity
+- **Secure sessions** — HttpOnly, Secure, and SameSite-flagged session cookies
 
 ## Tech Stack
 
@@ -29,7 +29,7 @@ AssistantScheduler helps managers build and maintain employee shift schedules wh
 | Real-time | Flask-SocketIO, eventlet |
 | Database | PostgreSQL (production), SQLite (local dev) |
 | ORM / Migrations | SQLAlchemy, Flask-Migrate (Alembic) |
-| Auth | Flask-Login, bcrypt |
+| Auth | Shared identity-service (Spring Boot, RS256 JWT) for credentials; Flask-Login for the browser session; PyJWT |
 | Forms | Flask-WTF |
 | Production server | Gunicorn (eventlet worker) |
 | Hosting | Render |
@@ -39,6 +39,33 @@ AssistantScheduler helps managers build and maintain employee shift schedules wh
 - **Notifications** are written to the database *and* pushed live via a `notify_user()` service helper, which emits a SocketIO event scoped to a `user_{id}` room — ensuring updates only ever reach the intended recipient's active session.
 - **Blueprints** separate manager and employee routes (`app/manager`, `app/employee`) for clear permission boundaries.
 - **Session cookies** are configured with `SameSite=Lax` and `Secure=True` in production to reduce cross-site request risks.
+
+## Signing In
+
+Sign-in is delegated to a shared identity service that also backs my other portfolio apps. This app keeps its own roles table and links each person to their identity by the token's `sub` claim, falling back to email on first login. An account that is already linked to a different identity is refused.
+
+- **Access is by invitation.** A manager adds an employee's email under Employees; that person then signs in with their identity-service account.
+- **First sign-in after idle can be slow.** The identity service runs on a free Render instance that sleeps when unused. The app retries for several seconds; if it still shows "The sign-in service is waking up," wait about a minute and try again.
+
+### Local development
+
+Sign-in needs a running identity-service. By default the app looks for it at `http://localhost:8081`; point it elsewhere with the `IDENTITY_URL` environment variable (for example the deployed service's URL).
+
+```bash
+export IDENTITY_URL=https://your-identity-service.onrender.com
+flask run
+```
+
+## Demo Data
+
+`seed_demo.py` fills an empty database with a fictional roster, routes, stops and two weeks of upcoming shifts, so the manager dashboard has something to show.
+
+```bash
+python seed_demo.py            # add demo data (safe to re-run)
+python seed_demo.py --remove   # delete everything it created
+```
+
+Demo people use `@demo.invalid` emails and a placeholder identity link, so no real sign-in can ever be attached to them.
 
 ## Getting Started
 
