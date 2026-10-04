@@ -70,16 +70,11 @@ def add_employee():
             flash('An account with that email already exists.', 'danger')
             return render_template('manager/employee_form.html',
                                    form=form, action='Add')
-        if not form.password.data:
-            flash('Password is required for new employees.', 'danger')
-            return render_template('manager/employee_form.html',
-                                   form=form, action='Add')
         user = User(
             name=form.name.data,
             email=form.email.data.lower(),
             role_id=form.role.data,
         )
-        user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
         flash(f'{user.name} has been added.', 'success')
@@ -103,8 +98,6 @@ def edit_employee(user_id):
         user.name = form.name.data
         user.email = form.email.data.lower()
         user.role_id = form.role.data
-        if form.password.data:
-            user.set_password(form.password.data)
         db.session.commit()
         flash(f'{user.name} has been updated.', 'success')
         return redirect(url_for('manager.employees'))
