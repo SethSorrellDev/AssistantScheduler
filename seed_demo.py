@@ -7,10 +7,12 @@ Demo people use @demo.invalid emails and a placeholder identity_sub, so no
 real sign-in can ever be linked to them. They exist only as roster entries.
 """
 import sys
-from datetime import date, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 
 from app import create_app, db
-from app.models import Location, Role, Route, RouteStop, Shift, Stop, User
+from app.models import (
+    AuditLog, Location, Role, Route, RouteStop, Shift, Stop, User,
+)
 
 DOMAIN = "demo.invalid"
 
@@ -22,6 +24,14 @@ PEOPLE = [  # (name, email local part, role)
     ("Taylor Brooks", "taylor.brooks", "assistant"),
     ("Devon Patel", "devon.patel", "assistant"),
     ("Quinn Larson", "quinn.larson", "assistant"),
+    ("Avery Quinn", "avery.quinn", "manager"),  # actor on the demo audit trail
+]
+
+# (action, hours ago, which shift: index into the seeded shifts, or None)
+AUDIT_TRAIL = [
+    ("shift_created", 52, 0), ("shift_created", 51, 1), ("shift_created", 50, 2),
+    ("shift_updated", 30, 1), ("shift_created", 27, 3),
+    ("shift_deleted", 20, None), ("shift_updated", 8, 2), ("shift_created", 3, 4),
 ]
 
 ROUTES = [  # (name, description, PPE)
@@ -58,7 +68,7 @@ def _role(name):
 
 
 def seed():
-    created = {"users": 0, "routes": 0, "stops": 0, "shifts": 0}
+    created = {"users": 0, "routes": 0, "stops": 0, "shifts": 0, "audit": 0}
 
     location = Location.query.filter_by(name="Frankfort Plant").first()
     if location is None:
@@ -110,6 +120,7 @@ def seed():
                                              day=day, sequence=seq))
 
     ssrs, assistants = people["ssr"], people["assistant"]
+    manager = people["manager"][0]
     today = date.today()
     workday = 0
     for offset in range(1, DAYS_AHEAD + 1):
@@ -127,13 +138,49 @@ def seed():
                     created["shifts"] += 1
         workday += 1
 
+    db.session.flush()
+    created["audit"] = _seed_audit(manager)
     db.session.commit()
     print("Demo data added:", created)
+
+
+def _seed_audit(manager):
+    """A plausible recent activity trail, attributed to the demo manager.
+
+    Written directly (not through record_audit) so seeding makes no live
+    SocketIO pushes. Skipped if the demo manager already has audit rows.
+    """
+    if AuditLog.query.filter_by(actor_id=manager.id).first():
+        return 0
+    emails = {u.id: u.email for u in User.query.filter(
+        User.email.like(f"%@{DOMAIN}")).all()}
+    shifts = (Shift.query.filter(Shift.user_id.in_(list(emails)))
+              .order_by(Shift.date, Shift.id).limit(len(AUDIT_TRAIL)).all())
+    ghost_id = (db.session.query(db.func.max(Shift.id)).scalar() or 0) + 1
+    now = datetime.now(timezone.utc)
+    added = 0
+    for action, hours_ago, idx in AUDIT_TRAIL:
+        if idx is None:
+            entity_id = ghost_id
+        elif idx < len(shifts):
+            entity_id = shifts[idx].id
+        else:
+            continue
+        verb = action.split("_")[1]
+        db.session.add(AuditLog(
+            actor_id=manager.id, action=action, entity="shift",
+            entity_id=entity_id,
+            detail=f"Shift #{entity_id} {verb} by {manager.email}",
+            created_at=now - timedelta(hours=hours_ago)))
+        added += 1
+    return added
 
 
 def remove():
     users = User.query.filter(User.email.like(f"%@{DOMAIN}")).all()
     ids = [u.id for u in users]
+    if ids:
+        AuditLog.query.filter(AuditLog.actor_id.in_(ids)).delete(synchronize_session=False)
     shifts = Shift.query.filter(Shift.user_id.in_(ids)).delete(synchronize_session=False) if ids else 0
     for u in users:
         db.session.delete(u)

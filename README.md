@@ -69,7 +69,7 @@ python seed_demo.py            # add demo data (safe to re-run)
 python seed_demo.py --remove   # delete everything it created
 ```
 
-Demo people use `@demo.invalid` emails and a placeholder identity link, so no real sign-in can ever be attached to them.
+It also adds a demo manager and a short audit trail, so the Audit Log page has believable activity. Demo people use `@demo.invalid` emails and a placeholder identity link, so no real sign-in can ever be attached to them.
 
 ## Getting Started
 
@@ -126,7 +126,7 @@ gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT run:app
 
 ## Testing
 
-40 tests via pytest, running in CI (GitHub Actions) on every push.
+47 tests via pytest, running in CI (GitHub Actions) on every push.
 
 ```bash
 pip install -r requirements-dev.txt
