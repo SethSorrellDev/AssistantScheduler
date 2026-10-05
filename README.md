@@ -11,6 +11,10 @@ AssistantScheduler helps managers build and maintain employee shift schedules wh
 
 **Live demo:** [assistantscheduler.onrender.com](https://assistantscheduler.onrender.com)
 
+Hosted on Render's free tier, so the first request after a period of inactivity may take 30-60 seconds to wake up. The shared identity service that handles sign-in runs on an always-on paid instance, so sign-in itself never waits on a cold start.
+
+**Demo access:** available on request. Access is by invitation: a sign-in only sees the app once a manager has added that email under Employees.
+
 ## Features
 
 - **Role-based access control** — separate dashboards and permissions for Managers and Employees (Service Sales Reps, Assistants)
@@ -45,14 +49,14 @@ AssistantScheduler helps managers build and maintain employee shift schedules wh
 Sign-in is delegated to a shared identity service that also backs my other portfolio apps. This app keeps its own roles table and links each person to their identity by the token's `sub` claim, falling back to email on first login. An account that is already linked to a different identity is refused.
 
 - **Access is by invitation.** A manager adds an employee's email under Employees; that person then signs in with their identity-service account.
-- **First sign-in after idle can be slow.** The identity service runs on a free Render instance that sleeps when unused. The app retries for several seconds; if it still shows "The sign-in service is waking up," wait about a minute and try again.
+- **Sign-in is resilient to a slow identity service.** The identity service runs on an always-on paid instance, but the app still retries connection errors and 502/503/504 responses for several seconds before showing "The sign-in service is waking up."
 
 ### Local development
 
 Sign-in needs a running identity-service. By default the app looks for it at `http://localhost:8081`; point it elsewhere with the `IDENTITY_URL` environment variable (for example the deployed service's URL).
 
 ```bash
-export IDENTITY_URL=https://your-identity-service.onrender.com
+export IDENTITY_URL=https://identity-service-c5ab.onrender.com
 flask run
 ```
 
@@ -78,8 +82,8 @@ Demo people use `@demo.invalid` emails and a placeholder identity link, so no re
 
 ```bash
 # Clone the repo
-git clone <your-repo-url>
-cd CintasSchedulingApp
+git clone https://github.com/SethSorrellDev/AssistantScheduler.git
+cd AssistantScheduler
 
 # Create and activate a virtual environment
 python3 -m venv venv
@@ -97,6 +101,7 @@ Create a `.env` file (or export these directly) before running the app:
 |---|---|---|
 | `SECRET_KEY` | Flask session signing key | Yes |
 | `DATABASE_URL` | PostgreSQL connection string | Yes (falls back to local SQLite if unset) |
+| `IDENTITY_URL` | Base URL of the shared identity service | Yes (defaults to `http://localhost:8081`) |
 | `FLASK_ENV` | Set to `production` in deployed environments | Recommended |
 
 ### Database Setup
@@ -121,14 +126,17 @@ gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT run:app
 
 ## Testing
 
+40 tests via pytest, running in CI (GitHub Actions) on every push.
+
 ```bash
+pip install -r requirements-dev.txt
 pytest
 ```
 
 ## Project Structure
 
 ```
-CintasSchedulingApp/
+AssistantScheduler/
 ├── app/
 │   ├── employee/       # Employee-facing routes & templates
 │   ├── manager/         # Manager-facing routes & templates
@@ -149,4 +157,4 @@ CintasSchedulingApp/
 
 ## License
 
-Specify your license here (e.g., MIT).
+MIT — see [LICENSE](LICENSE).
